@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/clear"
+        android:title="@string/my_menu_clear"/>
+    <item
+        android:id="@+id/save"
+        android:title="@string/my_menu_save"/>
+    <item
+        android:id="@+id/MySettings"
+        android:title="@string/my_menu_settings"/>
+    <item
+        android:id="@+id/myProfil"
+        android:title="@string/my_menu_sigup"/>
+</menu>
