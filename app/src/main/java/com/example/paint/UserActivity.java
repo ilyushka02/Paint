@@ -2,8 +2,11 @@ package com.example.paint;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -16,6 +19,13 @@ import androidx.navigation.ui.NavigationUI;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+
+import org.json.JSONObject;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
 
 public class UserActivity extends AppCompatActivity {
 
@@ -65,11 +75,103 @@ public class UserActivity extends AppCompatActivity {
                 || super.onSupportNavigateUp();
     }
 
-    public void mvMain(View view) {
-        mvMainActivity();
+    public void logoutAccount(View view) {
+        URL url = null;
+        try {
+            url = new URL(MainActivity.SERVER_URL + "/api/logout/" + MainActivity.profileName);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        MainActivity.NetworkTask t = new MainActivity.NetworkTask();
+
+        try {
+            JSONObject data = new JSONObject();
+            HashMap<String, String> props = new HashMap<>();
+            props.put("Content-Type", "application/json");
+            props.put("token", MainActivity.authToken);
+            MainActivity.Request request = new MainActivity.Request(url, "GET", props, data);
+
+            t.execute(request);
+
+            JSONObject result = t.get();
+            Log.i(MainActivity.class.getSimpleName(), "OUTPUT Result: " + result);
+            if (result != null) {
+                MainActivity.authToken = "";
+                MainActivity.profileName = "";
+                mvMainActivity();
+            } else {
+                Toast.makeText(this, "Ошибка сервера", Toast.LENGTH_SHORT).show();
+            }
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Ошибка сервера", Toast.LENGTH_SHORT).show();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Ошибка сервера", Toast.LENGTH_SHORT).show();
+        }
     }
 
     public void deleteAccount(View view) {
-        mvMainActivity();
+        URL url = null;
+
+        try {
+            url = new URL(MainActivity.SERVER_URL + "/api/logout/" + MainActivity.profileName);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        MainActivity.NetworkTask t = new MainActivity.NetworkTask();
+
+        try {
+            JSONObject data = new JSONObject();
+            HashMap<String, String> props = new HashMap<>();
+            props.put("Content-Type", "application/json");
+            props.put("token", MainActivity.authToken);
+            MainActivity.Request request = new MainActivity.Request(url, "GET", props, data);
+
+            t.execute(request);
+
+            JSONObject result = t.get();
+            Log.i(MainActivity.class.getSimpleName(), "OUTPUT Result: " + result);
+            if (result != null) {
+                MainActivity.authToken = "";
+                MainActivity.profileName = "";
+            } else {
+                Toast.makeText(this, "Ошибка сервера", Toast.LENGTH_SHORT).show();
+            }
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Ошибка сервера", Toast.LENGTH_SHORT).show();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Ошибка сервера", Toast.LENGTH_SHORT).show();
+        }
+
+        try {
+            url = new URL(MainActivity.SERVER_URL + "/api/deleteaccount/" + MainActivity.profileName);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            JSONObject data = new JSONObject();
+            HashMap<String, String> props = new HashMap<>();
+            props.put("Content-Type", "application/json");
+            props.put("token", MainActivity.authToken);
+            MainActivity.Request request = new MainActivity.Request(url, "POST", props, data);
+
+            t.execute(request);
+
+            JSONObject result = t.get();
+            Log.i(MainActivity.class.getSimpleName(), "OUTPUT Result: " + result);
+            MainActivity.authToken = "";
+            MainActivity.profileName = "";
+            mvMainActivity();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Ошибка сервера", Toast.LENGTH_SHORT).show();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Ошибка сервера", Toast.LENGTH_SHORT).show();
+        }
     }
 }

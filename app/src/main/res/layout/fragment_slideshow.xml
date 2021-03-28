@@ -16,7 +16,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="20dp"
-            android:text="User Name"
+            android:text="USER NAME"
             android:layout_margin="15dp"
             android:textColor="@color/black"
             tools:ignore="MissingConstraints" />
@@ -27,9 +27,10 @@
             android:layout_height="wrap_content"
             android:layout_margin="24dp"
             android:background="@color/purple_200"
+            android:onClick="logoutAccount"
             android:text="@string/logout"
             android:textColor="@color/design_default_color_background"
-            android:onClick="deleteAccount"
+            app:backgroundTint="@color/teal_700"
             tools:ignore="OnClick" />
     </LinearLayout>
 
@@ -38,13 +39,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="24dp"
-        android:background="@color/red"
+        android:onClick="deleteAccount"
         android:text="@string/delete"
         android:textColor="@color/design_default_color_background"
+        app:backgroundTint="@color/red"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        android:onClick="deleteAccount"
         tools:ignore="OnClick" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

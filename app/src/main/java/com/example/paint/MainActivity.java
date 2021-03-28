@@ -11,6 +11,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -24,10 +25,27 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity
         implements View.OnTouchListener,View.OnClickListener{
+    public static String SERVER_URL = "http://192.168.43.24:3000";
+    public static String authToken = "";
+    public static String profileName = "";
+    private String name = "Новый рисунок";
+
     private  CanvasView canvasView;
     private Path drawPath = new Path();
     private Paint drawPaint = new Paint();
@@ -186,6 +204,60 @@ public class MainActivity extends AppCompatActivity
             }
         });
         saveDialog.show();
+    }
+
+    //---------------------------------------------------------------------------------------------
+    static class Request {
+        public URL url;
+        public String method;
+        public HashMap<String, String> props;
+        public JSONObject data;
+
+        public Request(URL url, String method, HashMap<String, String> props, JSONObject data) {
+            this.url = url;
+            this.method = method;
+            this.props = props;
+            this.data = data;
+        }
+    }
+
+    static class NetworkTask extends AsyncTask<Request, Void, JSONObject> {
+        @Override
+        protected JSONObject doInBackground(Request[] objects) {
+            return connectAndSend(objects[0]);
+        }
+    }
+
+    private static JSONObject connectAndSend(Request request) {
+        try {
+            HttpURLConnection con = (HttpURLConnection) request.url.openConnection();
+            con.setRequestMethod(request.method);
+            for (Map.Entry<String, String> entry : request.props.entrySet()) {
+                con.setRequestProperty(entry.getKey(), entry.getValue());
+            }
+
+            if (request.data.length() > 0) {
+                OutputStream os = con.getOutputStream();
+                os.write(request.data.toString().getBytes());
+            }
+            InputStream is = con.getInputStream();
+            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            StringBuilder builder = new StringBuilder();
+
+            String line;
+            while ((line = br.readLine()) != null) {
+                builder.append(line);
+            }
+            String result = builder.toString();
+            if (result.startsWith("[")) {
+                result = "{ \"uploads\": " + result + "}";
+            }
+            return new JSONObject(result);
+        } catch (IOException | JSONException e) {
+           Log.d(MainActivity.class.getSimpleName(), "ERROR check mee ");
+            e.printStackTrace();
+            return null;
+        }
     }
 
 }
