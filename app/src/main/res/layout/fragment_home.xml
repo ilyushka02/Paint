@@ -13,6 +13,5 @@
         android:layout_height="match_parent"
         android:text="Создать холст"
         android:textColor="@color/yelow"
-        android:onClick="mvMain"
-        tools:ignore="OnClick"/>
+        android:onClick="mvMain"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -11,8 +11,10 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Picture;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
@@ -29,11 +31,17 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,9 +50,9 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity
         implements View.OnTouchListener,View.OnClickListener{
     public static String SERVER_URL = "http://192.168.43.24:3000";
+    public static String filePath = "";
     public static String authToken = "";
     public static String profileName = "";
-    private String name = "Новый рисунок";
 
     private  CanvasView canvasView;
     private Path drawPath = new Path();
@@ -176,25 +184,32 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void save(){
+        String nameFile = UUID.randomUUID().toString()+".png";
+        String folderPath = Environment.getExternalStorageDirectory() + "/Download/";
+        String filePath = "/Download/";
         AlertDialog.Builder saveDialog = new AlertDialog.Builder(this);
         saveDialog.setTitle("Сохранение изображения");
         saveDialog.setMessage("Хотите сохранить изображение в гелерею?");
         saveDialog.setPositiveButton("Да", new DialogInterface.OnClickListener(){
             public void onClick(DialogInterface dialog, int which){
                 canvasView.setDrawingCacheEnabled(true);
-                String imgSaved = MediaStore.Images.Media.insertImage(
-                        getContentResolver(), canvasView.getDrawingCache(),
-                        UUID.randomUUID().toString()+".png", "drawing");
-                if(imgSaved!=null){
-                    Toast savedToast = Toast.makeText(getApplicationContext(),
-                            "Изображение успешно сохранено", Toast.LENGTH_SHORT);
-                    savedToast.show();
-                }
-                else{
+//                String imgSaved = MediaStore.Images.Media.insertImage(
+//                        getContentResolver(), canvasView.getDrawingCache(), nameFile
+//                        , "drawing");
+                try {
+                    canvasView.getDrawingCache().compress(Bitmap.CompressFormat.JPEG, 100, new FileOutputStream(new File(folderPath + nameFile)));
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
                     Toast unsavedToast = Toast.makeText(getApplicationContext(),
                             "Упс! Похоже, что возникла ошибка. Попробуйте выдать права приложению.", Toast.LENGTH_SHORT);
                     unsavedToast.show();
                 }
+
+                    Log.d(MainActivity.class.getSimpleName(), "NAME " + nameFile + " PAth " + filePath);
+                    onDebug2(filePath, nameFile);
+                    Toast savedToast = Toast.makeText(getApplicationContext(),
+                            "Изображение успешно сохранено ", Toast.LENGTH_SHORT);
+                    savedToast.show();
                 canvasView.destroyDrawingCache();
             }
         });
@@ -260,4 +275,143 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    public void onDebug2(String strFilePath, String strFileName) {
+
+        String uploadFilePath = Environment.getExternalStorageDirectory() + strFilePath;
+        String uploadFileName = strFileName;
+        String sourceFileUri = uploadFilePath + uploadFileName;
+        String upLoadServerUri = SERVER_URL+"/api/upload";
+
+
+        new Thread(new Runnable() {
+            public void run() {
+                uploadFile(uploadFilePath, uploadFileName, sourceFileUri,
+                        upLoadServerUri, "Android File", "File from android");
+            }
+        }).start();
+
+    }
+
+    public int uploadFile(String uploadFilePath, String uploadFileName,
+                          String sourceFileUri, String upLoadServerUri, String title, String body) {
+
+        String fileName = sourceFileUri;
+
+        HttpURLConnection conn = null;
+        DataOutputStream dos = null;
+        String lineEnd = "\r\n";
+        String twoHyphens = "--";
+        String boundary = "qwerty";
+        int bytesRead, bytesAvailable, bufferSize;
+        byte[] buffer;
+        int maxBufferSize = 1 * 1024 * 1024;
+        File sourceFile = new File(sourceFileUri);
+
+        if (!sourceFile.isFile()) {
+
+            Log.d("uploadFile", "Source File not exist :"
+                    + uploadFilePath + " " + uploadFileName);
+
+            runOnUiThread(new Runnable() {
+                public void run() {
+                    Log.d(MainActivity.class.getSimpleName(), "OUTPUT Upload file: " + uploadFilePath + "" + uploadFileName);
+                }
+            });
+
+            return 0;
+
+        } else {
+            int serverResponseCode = 0;
+            try {
+
+                // open a URL connection to the Servlet
+                FileInputStream fileInputStream = new FileInputStream(sourceFile);
+                URL url = new URL(upLoadServerUri);
+
+                // Open a HTTP  connection to  the URL
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setDoInput(true); // Allow Inputs
+                conn.setDoOutput(true); // Allow Outputs
+                conn.setUseCaches(false); // Don't use a Cached Copy
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Accept", "*/*");
+                conn.setRequestProperty("token", authToken);
+                conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+                dos = new DataOutputStream(conn.getOutputStream());
+
+                dos.writeBytes(twoHyphens + boundary + lineEnd);
+                dos.writeBytes("Content-Disposition: form-data; name=\"file\"; filename=\"" + uploadFileName + "\"");
+                dos.writeBytes(lineEnd);
+                dos.writeBytes(lineEnd);
+
+                // create a buffer of  maximum size
+                bytesAvailable = fileInputStream.available();
+
+                bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                buffer = new byte[bufferSize];
+
+                // read file and write it into form...
+                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+                while (bytesRead > 0) {
+
+                    dos.write(buffer, 0, bufferSize);
+                    bytesAvailable = fileInputStream.available();
+                    bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                    bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+                }
+
+                // send multipart form data necesssary after file data...
+                dos.writeBytes(lineEnd);
+                dos.writeBytes(lineEnd);
+
+                dos.writeBytes(twoHyphens + boundary + lineEnd);
+                dos.writeBytes("Content-Disposition: form-data; name=\"title\"");
+                dos.writeBytes(lineEnd);
+                dos.writeBytes(lineEnd);
+                dos.writeBytes(title);
+                dos.writeBytes(lineEnd);
+                dos.writeBytes(twoHyphens + boundary + lineEnd);
+                dos.writeBytes("Content-Disposition: form-data; name=\"body\"");
+                dos.writeBytes(lineEnd);
+                dos.writeBytes(lineEnd);
+                dos.writeBytes(body);
+                dos.writeBytes(lineEnd);
+                dos.writeBytes(twoHyphens + boundary + twoHyphens);
+                dos.writeBytes(lineEnd);
+
+
+                // Responses from the server (code and message)
+                serverResponseCode = conn.getResponseCode();
+                String serverResponseMessage = conn.getResponseMessage();
+
+                Log.i(MainActivity.class.getSimpleName(), "OUTPUT HTTP Response is : "
+                        + serverResponseMessage + ": " + serverResponseCode);
+
+                if (serverResponseCode == 201) {
+                    Log.d(MainActivity.class.getSimpleName(), "OUTPUT File Upload Completed: " + uploadFileName);
+                }
+
+                //close the streams //
+                fileInputStream.close();
+                dos.flush();
+                dos.close();
+
+            } catch (MalformedURLException ex) {
+
+                ex.printStackTrace();
+
+                Log.d(MainActivity.class.getSimpleName(), "OUTPUT File Upload error: " + ex.getMessage(), ex);
+            } catch (Exception e) {
+
+                e.printStackTrace();
+                Log.d(MainActivity.class.getSimpleName(), "OUTPUT File Upload Exception : "
+                        + e.getMessage(), e);
+            }
+            return serverResponseCode;
+
+        } // End else block
+    }
 }

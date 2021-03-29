@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 public class UserActivity extends AppCompatActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
+
     public  void mvMainActivity(){
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
@@ -74,6 +75,7 @@ public class UserActivity extends AppCompatActivity {
         return NavigationUI.navigateUp(navController, mAppBarConfiguration)
                 || super.onSupportNavigateUp();
     }
+
 
     public void logoutAccount(View view) {
         URL url = null;
@@ -141,5 +143,9 @@ public class UserActivity extends AppCompatActivity {
             e.printStackTrace();
             Toast.makeText(this, "Ошибка сервера", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public void mvMain(View view) {
+        mvMainActivity();
     }
 }
